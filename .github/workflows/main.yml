@@ -33,10 +33,5 @@ jobs:
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: python sentinel.py
       
-      - name: Commit updated history
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Update history.db"
-          file_pattern: "*.db"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Auto-commit disabled - requires PAT token
+      # To enable: add GITHUB_TOKEN as PAT with repo write access
