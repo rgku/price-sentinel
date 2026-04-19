@@ -1,0 +1,42 @@
+name: Price Sentinel
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # A cada 60 minutos
+  workflow_dispatch:    # Permite execução manual
+  push:
+    branches:
+      - main
+
+jobs:
+  run-sentinel:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+      
+      - name: Run Sentinel
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: python sentinel.py
+      
+      - name: Commit updated history
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update history.db"
+          file_pattern: "*.db"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

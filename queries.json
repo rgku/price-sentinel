@@ -1,0 +1,68 @@
+{
+  "queries": [
+    {
+      "id": 1,
+      "name": "TVs 4K Amazon ES",
+      "type": "category",
+      "source": "amazon.es",
+      "search_term": "televisor 4k",
+      "min_discount_percent": 25
+    },
+    {
+      "id": 2,
+      "name": "Fraldas Continente",
+      "type": "product",
+      "source": "continente.pt",
+      "search_term": "Fraldas Dodot",
+      "min_discount_percent": 20
+    },
+    {
+      "id": 3,
+      "name": "Nutella Chollos ES",
+      "type": "product",
+      "source": "canal:@chollos",
+      "search_term": "Nutella",
+      "min_discount_percent": 25
+    },
+    {
+      "id": 4,
+      "name": "Nike Air Max Descuentos",
+      "type": "brand",
+      "source": "canal:@descuentos",
+      "search_term": "Nike Air Max",
+      "min_discount_percent": 30
+    },
+    {
+      "id": 5,
+      "name": "Vooos Baratos Viajeros",
+      "type": "category",
+      "source": "canal:@viajerospiratas",
+      "search_term": "vuelo",
+      "min_discount_percent": 40
+    },
+    {
+      "id": 6,
+      "name": "Pilhas Amazon ES",
+      "type": "category",
+      "source": "amazon.es",
+      "search_term": "pilhas",
+      "min_discount_percent": 20
+    },
+    {
+      "id": 7,
+      "name": "Fraldas Wolf Ofertas PT",
+      "type": "product",
+      "source": "canal:@wolf_ofertas",
+      "search_term": "Fraldas",
+      "min_discount_percent": 20
+    },
+    {
+      "id": 8,
+      "name": "Ganga24 Tech ES",
+      "type": "category",
+      "source": "canal:@ganga24",
+      "search_term": "tecnologia",
+      "min_discount_percent": 30
+    }
+  ]
+}
