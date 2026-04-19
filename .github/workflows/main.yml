@@ -6,7 +6,7 @@ on:
   workflow_dispatch:    # Permite execução manual
   push:
     branches:
-      - main
+      - master
 
 jobs:
   run-sentinel:
