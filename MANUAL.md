@@ -103,6 +103,16 @@ Edite o ficheiro `queries.json`:
 | @portugalgeek | 27K | 🇵🇹 |
 | @viajerospiratas | 67K | ✈️ |
 
+**RSS Feeds:**
+
+| Fonte | URL | Tipo |
+|-------|-----|------|
+| DealDump All | `rss:https://dealdump.com/rss.php` | Geral |
+| DealDump Tech | `rss:https://dealdump.com/rss.php?cat=computers-and-accessories` | Tecnologia |
+| DealDump Laptops | `rss:https://dealdump.com/rss.php?cat=Laptops` | Laptops |
+| eDealinfo | `rss:https://www.edealinfo.com/rss/` | Geral |
+| DealNews | `rss:https://dealnews.com/pages/rss.html` | Geral |
+
 ---
 
 ## 4. Exemplos de Pesquisas

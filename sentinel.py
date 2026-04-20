@@ -242,17 +242,98 @@ async def scrape_google_shopping(query: str, target_lang: str) -> list:
     return results
 
 
+async def scrape_amazon_paapi(search_term: str, target_lang: str) -> list:
+    """Usar Amazon Product Advertising API."""
+    import hmac
+    import hashlib
+    import base64
+    import time
+    import requests
+    
+    results = []
+    
+    # Credenciais AWS
+    access_key = os.getenv("AWS_ACCESS_KEY", "")
+    secret_key = os.getenv("AWS_SECRET_KEY", "")
+    
+    if not access_key or not secret_key:
+        log("ERRO: AWS_ACCESS_KEY ou AWS_SECRET_KEY não definidos")
+        return results
+    
+    try:
+        # Amazon PA-API endpoint
+        endpoint = "https://webservices.amazon.com/aws/AWSECommerceService/latest/di"
+        
+        # Traduzir para inglês se necessário
+        if target_lang == "es":
+            from deep_translator import GoogleTranslator
+            search_term_en = GoogleTranslator(source="auto", target="en").translate(search_term)
+        else:
+            search_term_en = search_term
+        
+        # Parâmetros da requisição
+        params = {
+            "Service": "AWSECommerceService",
+            "Operation": "SearchItems",
+            "Keywords": search_term_en,
+            "SearchIndex": "Electronics",
+            "ItemCount": 10,
+            "ResponseGroup": "Offers,Images",
+            "AWSAccessKeyId": access_key,
+            "AssociateTag": "price sentinel",  # Troca pelo teu associate tag
+            "Timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "Version": "2013-08-01",
+        }
+        
+        # Assinar requisição (simplificado)
+        # Em produção, usa a assinatura completa
+        
+        response = requests.get(endpoint, params, timeout=15)
+        
+        if response.status_code == 200:
+            xml = response.text
+            
+            # Parse básico de preços (sem XML library)
+            import re
+            prices = re.findall(r'<Amount>(\d+\.\d+)</Amount>', xml)
+            
+            if prices:
+                for price in prices[:5]:
+                    results.append({
+                        "url": "https://amazon.com",
+                        "content": f"Amazon produto: {search_term_en} - Preço: ${price}",
+                        "source": "amazon_paapi",
+                    })
+                    
+                log(f"PA-API: {len(results)} resultados")
+            else:
+                log(f"PA-API: Sem ofertas encontradas")
+        else:
+            log(f"PA-API erro: {response.status_code}")
+            
+    except Exception as e:
+        log(f"ERRO PA-API: {e}")
+    
+    return results
+
+
 async def scrape_search(source: str, search_term: str) -> list:
     results = []
     lang = get_source_lang(source)
     translated = translate_term(search_term, lang)
 
-    if "amazon.es" in source:
-        url = f"https://www.amazon.es/s?k={translated.replace(' ', '+')}"
-        log(f"Pesquisar Amazon ES: {search_term}")
-        content = await scrape_website(url)
-        if content:
-            results.append({"url": url, "content": content, "source": source})
+    if "amazon.es" in source or "amazon.com" in source:
+        # Tentar primeiro PA-API
+        paapi_results = await scrape_amazon_paapi(search_term, lang)
+        if paapi_results:
+            results.extend(paapi_results)
+        else:
+            # Fallback ao scraping
+            url = f"https://www.amazon.es/s?k={translated.replace(' ', '+')}"
+            log(f"Pesquisar Amazon ES: {search_term}")
+            content = await scrape_website(url)
+            if content:
+                results.append({"url": url, "content": content, "source": source})
 
     elif "continente.pt" in source:
         encoded = translated.replace(' ', '%20')

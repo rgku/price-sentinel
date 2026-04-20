@@ -71,6 +71,33 @@
       "search_term": "tecnologia",
       "min_discount_percent": 30,
       "max_price": 50
+    },
+    {
+      "id": 9,
+      "name": "Tech Deals RSS",
+      "type": "category",
+      "source": "rss:https://dealdump.com/rss.php?cat=computers-and-accessories",
+      "search_term": "laptop",
+      "min_discount_percent": 20,
+      "max_price": 500
+    },
+    {
+      "id": 10,
+      "name": "Amazon Tech Deals RSS",
+      "type": "category",
+      "source": "rss:https://dealdump.com/rss.php?cat=Laptops",
+      "search_term": "computer",
+      "min_discount_percent": 25,
+      "max_price": 600
+    },
+    {
+      "id": 11,
+      "name": "Deals News RSS",
+      "type": "category",
+      "source": "rss:https://www.dealdump.com/rss.php?cat=deals-under-25",
+      "search_term": "tech",
+      "min_discount_percent": 30,
+      "max_price": 25
     }
   ]
 }
