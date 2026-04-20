@@ -2,21 +2,12 @@
   "queries": [
     {
       "id": 1,
-      "name": "Fraldas continente",
+      "name": "Fraldas Google",
       "type": "product", 
-      "source": "continente.pt",
-      "search_term": "T1 dodot fraldas",
+      "source": "google",
+      "search_term": "dodot fraldas.pack",
       "min_discount_percent": 0,
-      "max_price": 50
-    },
-    {
-      "id": 2,
-      "name": "Fraldas Telegram",
-      "type": "product", 
-      "source": "all_channels",
-      "search_term": "T1 dodot",
-      "min_discount_percent": 0,
-      "max_price": 100
+      "max_price": 30
     }
   ]
 }
