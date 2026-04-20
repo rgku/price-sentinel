@@ -393,7 +393,7 @@ def extract_with_gemini(api_key: str, text: str, query_name: str) -> Optional[di
 
     try:
         client = genai.Client(api_key=api_key)
-        model = "gemini-2.5-flash-lite"
+        model = "gemini-2.0-flash-001"
 
         prompt = f"""
 Analisa este texto e extrai informacao de preco.
