@@ -13,7 +13,7 @@ from typing import Optional
 
 from playwright.async_api import async_playwright as pw
 from deep_translator import GoogleTranslator
-import google.generativeai as genai
+import google.genai as genai
 import requests
 
 CONFIG_FILE = "queries.json"
@@ -201,8 +201,8 @@ def extract_with_gemini(api_key: str, text: str, query_name: str) -> Optional[di
         return None
 
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.5-flash-lite")
+        client = genai.Client(api_key=api_key)
+        model = "gemini-2.5-flash-lite"
 
         prompt = f"""
 Extrai o preco e desconto deste texto de promocao.
@@ -212,7 +212,7 @@ Responde APENAS em JSON valido (sem texto extra):
 Texto (ate 3000 caracteres):
 {text[:3000]}
 """
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(model=model, contents=prompt)
         response_text = response.text.strip()
 
         if response_text.startswith("```json"):
@@ -287,13 +287,13 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
             continue
 
         # Filtro por desconto mínimo
-        discount = data.get("desconto_percent", 0)
+        discount = data.get("desconto_percent") or 0
         if discount < min_discount:
             log(f"Descarto {query_name}: {discount}% < {min_discount}%")
             continue
 
         # Filtro por preço máximo
-        price = data.get("preco", 0)
+        price = data.get("preco") or 0
         if max_price and price > max_price:
             log(f"Descarto {query_name}: {price} > {max_price}")
             continue
@@ -305,7 +305,7 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
             log(f"Descarto {query_name}: sem melhoria (era {last_discount}%)")
             continue
 
-        save_price(url, query_name, data.get("preco", 0), discount)
+        save_price(url, query_name, data.get("preco") or 0, discount)
 
         alert = {
             "query_name": query_name,
