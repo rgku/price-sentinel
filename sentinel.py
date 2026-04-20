@@ -269,17 +269,23 @@ def extract_prices_regex(text: str, query_name: str) -> list:
         valid = sorted(set(valid_prices))[:5]
         print(f"[DEBUG] Method 3 valid prices: {valid}")
         
-        for i, price in enumerate(valid):
-            original = price * 1.3
-            discount = ((original - price) / original) * 100 if original > 0 else 0
-            results.append({
-                "produto": f"Produto {i+1}",
-                "preco": price,
-                "preco_original": round(original, 2),
-                "desconto_percent": round(discount),
-                "source": "regex",
-                "url": f"https://www.continente.pt/pesquisar?q=T1%20dodot"
-            })
+        # Method 4: Extract URLs from text (for Telegram messages)
+    urls_in_text = re.findall(r'(https?://[^\s]+)', text)
+    urls_in_text = [u for u in urls_in_text if any(s in u for s in ['continente.pt', 'worten.pt', 'amazon', 'pingo', 'auchan', 'minipreco', 'mealdi'])]
+    urls_in_text = list(set(urls_in_text))[:3]
+    
+    for i, price in enumerate(valid):
+        original = price * 1.3
+        discount = ((original - price) / original) * 100 if original > 0 else 0
+        url = urls_in_text[i] if i < len(urls_in_text) else ""
+        results.append({
+            "produto": f"Produto {i+1}",
+            "preco": price,
+            "preco_original": round(original, 2),
+            "desconto_percent": round(discount),
+            "source": "regex",
+            "url": url
+        })
     
     return results[:5]
 
@@ -537,8 +543,9 @@ def extract_with_openrouter(api_key: str, text: str, query_name: str) -> Optiona
                     "model": model,
                     "messages": [{
                         "role": "user",
-                        "content": f"""Extrai o preco e desconto deste texto de promocao.
-Responde APENAS em JSON: {{"produto": "nome", "preco": numero, "preco_original": numero, "desconto_percent": numero}}
+                        "content": f"""Extrai preco, desconto e link de compra deste texto de promocao.
+Se houver link/URL para comprar o produto, extrai tambem.
+Responde APENAS em JSON: {{"produto": "nome", "preco": numero, "preco_original": numero, "desconto_percent": numero, "url": "link para comprar se existir"}}
 
 Texto: {text[:2000]}"""
                     }]
@@ -587,8 +594,9 @@ def extract_with_gemini(api_key: str, text: str, query_name: str) -> Optional[di
 Analisa este texto e extrai informacao de preco.
 Se houver preco, calcula o desconto baseado em precos originais mencionados.
 Se nao houver desconto, usa preco_original = preco e desconto_percent = 0.
+Se houver link/URL para comprar o produto, extrai tambem.
 Responde APENAS em JSON valido:
-{{"produto": "nome do produto", "preco": preco atual (numero), "preco_original": preco sem desconto (numero), "desconto_percent": desconto em numero}}
+{{"produto": "nome do produto", "preco": preco atual (numero), "preco_original": preco sem desconto (numero), "desconto_percent": desconto em numero, "url": "link para comprar o produto se existir"}}
 
 Texto:
 {text[:3000]}
