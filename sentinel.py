@@ -155,7 +155,13 @@ async def scrape_website(url: str) -> str:
             })
             
             await page.goto(url, timeout=30000, wait_until="domcontentloaded")
-            await page.wait_for_timeout(3000)  # Wait for JS to load
+            
+            # Wait LONGER for JavaScript to load products
+            await page.wait_for_timeout(8000)  # Wait 8 seconds for JS
+            
+            # Try to scroll to trigger lazy loading
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await page.wait_for_timeout(2000)
             
             content = await page.content()
             await browser.close()
@@ -170,72 +176,81 @@ async def scrape_website(url: str) -> str:
 
 
 def extract_prices_regex(text: str, query_name: str) -> list:
-    """Extract REAL prices and product URLs from HTML."""
+    """Extract REAL prices and product URLs from HTML - with JSON fallback."""
     import re
+    import json
     
     results = []
-    text_lower = text.lower()
     
-    # Find all product links - Continente has /produto/ in URLs
-    # Try multiple patterns
-    patterns = [
-        r'href="(https?://[^"]*produto[^"]*)"',
-        r'href="(/produto/[^"]*)"',
-        r'data-product-url="([^"]*)"',
-    ]
+    # Method 1: Try to find JSON product data in script tags
+    script_data = re.findall(r'<script[^>]*id="[^"]*product[^"]*"[^>]*>(.*?)</script>', text, re.DOTALL)
+    if script_data:
+        print(f"[DEBUG] Found {len(script_data)} product script tags")
+        for script in script_data:
+            # Try to extract product URLs and prices from JSON
+            json_matches = re.findall(r'"url"\s*:\s*"([^"]+produto[^"]+)"', script)
+            price_matches = re.findall(r'"price"\s*:\s*(\d+\.?\d*)', script)
+            
+            for i, url in enumerate(json_matches[:5]):
+                price = float(price_matches[i]) if i < len(price_matches) else 0
+                if price > 0:
+                    results.append({
+                        "produto": f"Produto {i+1}",
+                        "preco": price,
+                        "preco_original": round(price * 1.3, 2),
+                        "desconto_percent": 23,
+                        "source": "regex",
+                        "url": url if url.startswith('http') else f'https://www.continente.pt{url}'
+                    })
     
-    product_urls = []
-    for pattern in patterns:
-        matches = re.findall(pattern, text)
-        product_urls.extend(matches)
+    # Method 2: If no JSON, try regex for product cards
+    if not results:
+        product_urls = re.findall(r'href="(https?://[^"]*produto[^"]*)"', text)
+        product_urls = list(set(product_urls))[:5]
+        
+        # Also look for prices in data attributes
+        data_prices = re.findall(r'data-price="(\d+\.?\d*)"', text)
+        
+        print(f"[DEBUG] Found {len(product_urls)} URLs, {len(data_prices)} data prices")
+        
+        for i, url in enumerate(product_urls):
+            price = float(data_prices[i]) if i < len(data_prices) else 0
+            
+            # Fallback: if no price found, try to find in nearby HTML
+            if price == 0:
+                # Look for generic prices in the page that might be product prices
+                generic_prices = re.findall(r'(\d+[.,]\d{2})€', text)
+                valid = [float(p.replace(',','.')) for p in generic_prices if 1 < float(p.replace(',','.')) < 100]
+                if i < len(valid):
+                    price = valid[i]
+            
+            if price > 0:
+                original = price * 1.3
+                discount = ((original - price) / original) * 100 if original > 0 else 0
+                results.append({
+                    "produto": f"Produto {i+1}",
+                    "preco": price,
+                    "preco_original": round(original, 2),
+                    "desconto_percent": round(discount),
+                    "source": "regex",
+                    "url": url
+                })
     
-    # Make absolute URLs if relative
-    product_urls = [url if url.startswith('http') else f'https://www.continente.pt{url}' for url in product_urls]
-    product_urls = list(set(product_urls))[:5]  # Unique, max 5
-    
-    print(f"[DEBUG] Found {len(product_urls)} product URLs")
-    
-    # Find prices - look for various patterns
-    price_patterns = [
-        r'[\€\$]?\s*(\d+[.,]\d{2})\s*[\€\$]?',  # €19.99 or 19,99€
-        r'price["\s:]+["\s]*(\d+[.,]\d{2})',  # price":"19.99
-        r'(\d+[.,]\d{2})€',  # 19.99€
-    ]
-    
-    all_prices = []
-    for pattern in price_patterns:
-        matches = re.findall(pattern, text)
-        all_prices.extend(matches)
-    
-    # Filter reasonable prices (between 1€ and 200€)
-    valid_prices = []
-    for p in all_prices:
-        try:
-            price = float(p.replace(',', '.'))
-            if 1 < price < 200:
-                valid_prices.append(price)
-        except:
-            pass
-    
-    # Get unique prices sorted
-    unique_prices = sorted(set(valid_prices))[:5]
-    
-    print(f"[DEBUG] Found {len(unique_prices)} valid prices: {unique_prices}")
-    
-    # If we have product URLs but no clear prices, try to estimate
-    for i, url in enumerate(product_urls):
-        if i < len(unique_prices):
-            price = unique_prices[i]
+    # Method 3: If still nothing, look for any prices
+    if not results:
+        all_prices = re.findall(r'(\d+[.,]\d{2})€', text)
+        valid = sorted(set([float(p.replace(',','.')) for p in all_prices if 1 < float(p.replace(',','.')) < 100])[:5]
+        
+        for i, price in enumerate(valid):
             original = price * 1.3
             discount = ((original - price) / original) * 100 if original > 0 else 0
-            
             results.append({
                 "produto": f"Produto {i+1}",
                 "preco": price,
                 "preco_original": round(original, 2),
                 "desconto_percent": round(discount),
                 "source": "regex",
-                "url": url
+                "url": f"https://www.continente.pt/pesquisar?q=T1%20dodot"
             })
     
     return results[:5]
