@@ -6,15 +6,17 @@
       "type": "category",
       "source": "amazon.es",
       "search_term": "televisor 4k",
-      "min_discount_percent": 25
+      "min_discount_percent": 25,
+      "max_price": 400
     },
     {
       "id": 2,
-      "name": "Fraldas Continente",
+      "name": "Fraldas Dodot Continente",
       "type": "product",
       "source": "continente.pt",
       "search_term": "Fraldas Dodot",
-      "min_discount_percent": 20
+      "min_discount_percent": 20,
+      "max_price": 15
     },
     {
       "id": 3,
@@ -22,7 +24,8 @@
       "type": "product",
       "source": "canal:@chollos",
       "search_term": "Nutella",
-      "min_discount_percent": 25
+      "min_discount_percent": 25,
+      "max_price": 5
     },
     {
       "id": 4,
@@ -30,15 +33,17 @@
       "type": "brand",
       "source": "canal:@descuentos",
       "search_term": "Nike Air Max",
-      "min_discount_percent": 30
+      "min_discount_percent": 30,
+      "max_price": 120
     },
     {
       "id": 5,
-      "name": "Vooos Baratos Viajeros",
+      "name": "Voos Baratos Viajeros",
       "type": "category",
       "source": "canal:@viajerospiratas",
       "search_term": "vuelo",
-      "min_discount_percent": 40
+      "min_discount_percent": 40,
+      "max_price": 100
     },
     {
       "id": 6,
@@ -46,7 +51,8 @@
       "type": "category",
       "source": "amazon.es",
       "search_term": "pilhas",
-      "min_discount_percent": 20
+      "min_discount_percent": 20,
+      "max_price": 15
     },
     {
       "id": 7,
@@ -54,7 +60,8 @@
       "type": "product",
       "source": "canal:@wolf_ofertas",
       "search_term": "Fraldas",
-      "min_discount_percent": 20
+      "min_discount_percent": 20,
+      "max_price": 15
     },
     {
       "id": 8,
@@ -62,7 +69,8 @@
       "type": "category",
       "source": "canal:@ganga24",
       "search_term": "tecnologia",
-      "min_discount_percent": 30
+      "min_discount_percent": 30,
+      "max_price": 50
     }
   ]
 }

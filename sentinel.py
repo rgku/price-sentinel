@@ -263,6 +263,7 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
     search_term = query.get("search_term", "")
     source = query.get("source", "")
     min_discount = query.get("min_discount_percent", 20)
+    max_price = query.get("max_price")  # Novo filtro por preço máximo
 
     log(f"A processar: {query_name} ({source})")
 
@@ -285,9 +286,16 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
         if not data:
             continue
 
+        # Filtro por desconto mínimo
         discount = data.get("desconto_percent", 0)
         if discount < min_discount:
             log(f"Descarto {query_name}: {discount}% < {min_discount}%")
+            continue
+
+        # Filtro por preço máximo
+        price = data.get("preco", 0)
+        if max_price and price > max_price:
+            log(f"Descarto {query_name}: {price} > {max_price}")
             continue
 
         url = item.get("url", "")
