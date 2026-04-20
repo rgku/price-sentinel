@@ -239,7 +239,15 @@ def extract_prices_regex(text: str, query_name: str) -> list:
     # Method 3: If still nothing, look for any prices
     if not results:
         all_prices = re.findall(r'(\d+[.,]\d{2})€', text)
-        valid = sorted(set([float(p.replace(',','.')) for p in all_prices if 1 < float(p.replace(',','.')) < 100])[:5]
+        valid_prices = []
+        for p in all_prices:
+            try:
+                price = float(p.replace(',', '.'))
+                if 1 < price < 100:
+                    valid_prices.append(price)
+            except:
+                pass
+        valid = sorted(set(valid_prices))[:5]
         
         for i, price in enumerate(valid):
             original = price * 1.3
