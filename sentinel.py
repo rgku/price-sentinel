@@ -445,13 +445,10 @@ async def fetch_telegram_channel_api(channel_username: str, search_term: str) ->
     
     # Carregar credentials do Telegram
     api_id_str = os.getenv("TELEGRAM_API_ID", "")
-    api_hash = os.getenv("TELEGRAM_API_HASH", "")
+    api_hash = os.getenv("TELEGRAM_API_HASH", "").strip()
     bot_token = os.getenv("TELEGRAM_TOKEN", "")
     
-    # Se for um token de bot (formato: 123456:ABCDEF...), usar como auth
-    if api_id_str and ":" in api_id_str:
-        bot_token = api_id_str
-        api_id_str = ""
+    log(f"DEBUG: TELEGRAM_API_ID='{api_id_str}', api_hash exists={bool(api_hash)}")
     
     if not api_id_str and not bot_token:
         log("ERRO: TELEGRAM_API_ID ou TELEGRAM_TOKEN não definidos")
@@ -460,7 +457,8 @@ async def fetch_telegram_channel_api(channel_username: str, search_term: str) ->
     # Usar API_ID se disponível, senão usar bot token
     if api_id_str and api_hash:
         try:
-            api_id = int(api_id_str)
+            api_id = int(api_id_str.strip())
+            log(f"DEBUG: Using API_ID={api_id}, api_hash={api_hash[:10]}...")
         except ValueError:
             log("ERRO: TELEGRAM_API_ID deve ser um número inteiro")
             return results
@@ -472,18 +470,23 @@ async def fetch_telegram_channel_api(channel_username: str, search_term: str) ->
             return results
         api_id = bot_token.split(":")[0]
         api_hash = "use_bot_token"  # Placeholder
+        log(f"DEBUG: Using bot token fallback, api_id={api_id}")
     
     try:
         # Usar sessão em memória (não guarda ficheiro)
+        log(f"DEBUG: Creating TelegramClient with api_id={api_id}")
         client = TelegramClient(session=None, api_id=api_id, api_hash=api_hash)
         
         await client.connect()
+        log("DEBUG: Client connected, checking authorization...")
         
         # Verificar se está conectado
         if not await client.is_user_authorized():
             log("ERRO: Telegram não autorizado. Bot token ou API credentials inválidas.")
             await client.disconnect()
             return results
+        
+        log("DEBUG: Client authorized successfully!")
         
         # Obter mensagens do canal
         try:
