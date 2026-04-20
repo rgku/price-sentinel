@@ -33,6 +33,8 @@ TELEGRAM_CHANNEL_LANG = {
     "canal:@economizzandodg": "pt",
     "canal:@viajerospiratas": "es",
     "canal:@guidellowcost": "es",
+    "google_shopping": "en",
+    "rss:": "pt",
 }
 
 TELEGRAM_BOT_VERSION = "python-telegram-bot"
@@ -197,6 +199,49 @@ def extract_prices_regex(text: str, query_name: str) -> list:
     return results[:3]  # Return top 3
 
 
+async def scrape_google_shopping(query: str, target_lang: str) -> list:
+    """Usar Google Shopping para encontrar produtos."""
+    import requests
+    
+    results = []
+    
+    # Traduzir query para inglês se necessário
+    if target_lang != "en":
+        from deep_translator import GoogleTranslator
+        query_en = GoogleTranslator(source="auto", target="en").translate(query)
+    else:
+        query_en = query
+    
+    try:
+        # Usar pesquisa web simples (sem API paga)
+        url = f"https://www.google.com/search?q={query_en.replace(' ', '+')}+price"
+        
+        async with pw() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+            await page.set_extra_http_headers({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            })
+            await page.goto(url, timeout=20000, wait_until="domcontentloaded")
+            await page.wait_for_timeout(2000)
+            
+            content = await page.content()
+            await browser.close()
+            
+            if content:
+                results.append({
+                    "url": url,
+                    "content": content,
+                    "source": "google_shopping",
+                })
+                log(f"Google Shopping: {len(content)} chars")
+                
+    except Exception as e:
+        log(f"ERRO Google Shopping: {e}")
+    
+    return results
+
+
 async def scrape_search(source: str, search_term: str) -> list:
     results = []
     lang = get_source_lang(source)
@@ -217,7 +262,58 @@ async def scrape_search(source: str, search_term: str) -> list:
         if content:
             results.append({"url": url, "content": content, "source": source})
 
+    elif "google" in source:
+        # Google Shopping / Search
+        results = await scrape_google_shopping(search_term, lang)
+        return results
+    
+    elif "rss:" in source:
+        # RSS Feed
+        feed_url = source.replace("rss:", "")
+        results = await fetch_rss_feed(feed_url, search_term)
+        return results
+
     return results
+
+
+async def fetch_rss_feed(url: str, search_term: str) -> list:
+    """Ler RSS feeds de promoções."""
+    import feedparser
+    
+    results = []
+    
+    try:
+        feed = feedparser.parse(url)
+        
+        if feed.entries:
+            for entry in feed.entries[:20]:  # Latest 20 items
+                title = entry.get("title", "").lower()
+                summary = entry.get("summary", "").lower()
+                
+                if search_term.lower() in title or search_term.lower() in summary:
+                    content = f"{entry.get('title', '')}\n{entry.get('summary', '')}"
+                    results.append({
+                        "url": entry.get("link", url),
+                        "content": content,
+                        "source": f"rss:{url}",
+                    })
+            
+            log(f"RSS: {len(feed.entries)} itens de {url}")
+        else:
+            log(f"RSS vazio ou inválido: {url}")
+            
+    except Exception as e:
+        log(f"ERRO RSS {url}: {e}")
+    
+    return results
+
+
+# RSS Feeds populares de promoções
+RSS_FEEDS = {
+    "amazon_deals": "https://www.amazon.de/giftcard-todayonly/rss/11188470031/ref=as_li_ss_tw?pf_rd_r=2NM6XDWDAGKR6M2G6G4R&pf_rd_p=c4be4b3a-062e-49ac-929e-aabb5a7c0de0&pf_rd_s=toprs&pf_rd_t=1&pf_rd_i=giftcards&linkCode=ll",
+    "chollos_rss": "https://chollometro.com/feed",
+    "descuentos.es": "https://www.descuentoses/feed",
+}
 
 
 async def fetch_telegram_channel_api(channel_username: str, search_term: str) -> list:

@@ -20,7 +20,7 @@
     },
     {
       "id": 3,
-      "name": "Nutella Chollos ES",
+      "name": "Nutella Chollos (Telegram API)",
       "type": "product",
       "source": "canal:@chollos",
       "search_term": "Nutella",
@@ -29,21 +29,21 @@
     },
     {
       "id": 4,
-      "name": "Nike Air Max Descuentos",
+      "name": "Nike Air Max Google Shopping",
       "type": "brand",
-      "source": "canal:@descuentos",
+      "source": "google",
       "search_term": "Nike Air Max",
       "min_discount_percent": 30,
       "max_price": 120
     },
     {
       "id": 5,
-      "name": "Voos Baratos Viajeros",
+      "name": "Smartphones Google",
       "type": "category",
-      "source": "canal:@viajerospiratas",
-      "search_term": "vuelo",
-      "min_discount_percent": 40,
-      "max_price": 100
+      "source": "google",
+      "search_term": "smartphone",
+      "min_discount_percent": 25,
+      "max_price": 500
     },
     {
       "id": 6,
