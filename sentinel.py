@@ -446,16 +446,32 @@ async def fetch_telegram_channel_api(channel_username: str, search_term: str) ->
     # Carregar credentials do Telegram
     api_id_str = os.getenv("TELEGRAM_API_ID", "")
     api_hash = os.getenv("TELEGRAM_API_HASH", "")
+    bot_token = os.getenv("TELEGRAM_TOKEN", "")
     
-    if not api_id_str or not api_hash:
-        log("ERRO: TELEGRAM_API_ID ou TELEGRAM_API_HASH não definidos")
+    # Se for um token de bot (formato: 123456:ABCDEF...), usar como auth
+    if api_id_str and ":" in api_id_str:
+        bot_token = api_id_str
+        api_id_str = ""
+    
+    if not api_id_str and not bot_token:
+        log("ERRO: TELEGRAM_API_ID ou TELEGRAM_TOKEN não definidos")
         return results
     
-    try:
-        api_id = int(api_id_str)
-    except ValueError:
-        log("ERRO: TELEGRAM_API_ID deve ser um número inteiro")
-        return results
+    # Usar API_ID se disponível, senão usar bot token
+    if api_id_str and api_hash:
+        try:
+            api_id = int(api_id_str)
+        except ValueError:
+            log("ERRO: TELEGRAM_API_ID deve ser um número inteiro")
+            return results
+    elif bot_token and not api_id_str:
+        # Usar bot token como fallback
+        bot_token = os.getenv("TELEGRAM_TOKEN", "")
+        if not bot_token or ":" not in bot_token:
+            log("ERRO: TELEGRAM_TOKEN inválido (formato: 123456:ABCDEF...)")
+            return results
+        api_id = bot_token.split(":")[0]
+        api_hash = "use_bot_token"  # Placeholder
     
     try:
         # Usar sessão em memória (não guarda ficheiro)
