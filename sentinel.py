@@ -664,8 +664,6 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
 
             # Filtro por desconto mínimo - ACEITAR TODOS (0%)
             discount = data.get("desconto_percent") or 0
-                log(f"Descarto {query_name}: {discount}% < {min_discount}%")
-                continue
 
             # Filtro por preço máximo
             price = data.get("preco") or 0
