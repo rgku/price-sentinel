@@ -205,11 +205,13 @@ def extract_with_gemini(api_key: str, text: str, query_name: str) -> Optional[di
         model = "gemini-2.5-flash-lite"
 
         prompt = f"""
-Extrai o preco e desconto deste texto de promocao.
-Responde APENAS em JSON valido (sem texto extra):
-{{"produto": "string", "preco": float, "preco_original": float, "desconto_percent": float}}
+Analisa este texto e extrai informacao de preco.
+Se houver preco, calcula o desconto baseado em precos originais mencionados.
+Se nao houver desconto, usa preco_original = preco e desconto_percent = 0.
+Responde APENAS em JSON valido:
+{{"produto": "nome do produto", "preco": preco atual (numero), "preco_original": preco sem desconto (numero), "desconto_percent": desconto em numero}}
 
-Texto (ate 3000 caracteres):
+Texto:
 {text[:3000]}
 """
         response = client.models.generate_content(model=model, contents=prompt)
@@ -221,10 +223,12 @@ Texto (ate 3000 caracteres):
             response_text = response_text[:-3]
 
         data = json.loads(response_text)
+        log(f"Gemini retornou: {data}")
         return data
 
     except Exception as e:
         log(f"ERRO Gemini: {e}")
+        log(f"Resposta: {response_text if 'response_text' in dir() else 'N/A'}")
         return None
 
 
