@@ -23,6 +23,7 @@ LOG_FILE = "sentinel.log"
 TELEGRAM_CHANNEL_LANG = {
     "amazon.es": "es",
     "continente.pt": "pt",
+    "worten.pt": "pt",
     "canal:@chollos": "es",
     "canal:@descuentos": "es",
     "canal:@ganga24": "es",
@@ -328,6 +329,14 @@ async def scrape_search(source: str, search_term: str) -> list:
         encoded = translated.replace(' ', '%20')
         url = f"https://www.continente.pt/pesquisar?q={encoded}"
         log(f"Pesquisar Continente PT: {search_term}")
+        content = await scrape_website(url)
+        if content:
+            results.append({"url": url, "content": content, "source": source})
+
+    elif "worten.pt" in source:
+        encoded = translated.replace(' ', '-')
+        url = f"https://www.worten.pt/products?keyword={encoded}"
+        log(f"Pesquisar Worten: {search_term}")
         content = await scrape_website(url)
         if content:
             results.append({"url": url, "content": content, "source": source})

@@ -2,12 +2,12 @@
   "queries": [
     {
       "id": 1,
-      "name": "Fraldas Dodot PT",
+      "name": "Fraldas Worten",
       "type": "product", 
-      "source": "continente.pt",
-      "search_term": "T1 dodot",
+      "source": "worten.pt",
+      "search_term": "T1 dodot fraldas",
       "min_discount_percent": 0,
-      "max_price": 100
+      "max_price": 50
     }
   ]
 }
