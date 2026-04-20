@@ -387,36 +387,38 @@ async def fetch_telegram_channel_html(channel_username: str) -> list:
 
 
 OPENROUTER_MODELS = [
-    "meta-llama/llama-3.2-11b-vision-instruct",
-    "meta-llama/llama-3.1-8b-instruct",
-    "google/gemma-2-9b-it",
-    "mistralai/mistral-7b-instruct",
-    "qwen/qwen-2.5-7b-instruct",
-    "deepseek/deepseek-chat",
+    "openrouter/free",  # Router automático - selecciona modelo livre
+    "deepseek/deepseek-r1:free", 
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "mistralai/mistral-small-3.1-24b-instruct:free",
+    "qwen/qwen2.5-72b-instruct:free",
+    "nvidia/llama-3.1-nemotron-nano-8b-v1:free",
 ]
 _current_model_index = 0
 
 
 def extract_with_openrouter(api_key: str, text: str, query_name: str) -> Optional[dict]:
-    """Fallback: usar OpenRouter API quando Gemini falha - com rotação de modelos."""
+    """Fallback: usar OpenRouter API quando Gemini falha - com Free Models Router."""
     global _current_model_index
     import requests
     
     if not api_key:
         return None
     
-    # Tentar até 3 modelos diferentes
+    # Tentar até 3 modelos free diferentes
     for attempt in range(3):
         model = OPENROUTER_MODELS[_current_model_index % len(OPENROUTER_MODELS)]
         
         try:
-            log(f"Tentar OpenRouter com modelo: {model}")
+            log(f"Tentar OpenRouter com: {model}")
             
             response = requests.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
+                    "HTTP-Referer": "https://price-sentinel.github.io",
+                    "X-Title": "Price Sentinel"
                 },
                 json={
                     "model": model,
@@ -428,27 +430,28 @@ Responde APENAS em JSON: {{"produto": "nome", "preco": numero, "preco_original":
 Texto: {text[:2000]}"""
                     }]
                 },
-                timeout=30
+                timeout=45
             )
             
             if response.status_code == 200:
                 result = response.json()
                 content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
                 
-                # Parse JSON response
                 import re
                 match = re.search(r'\{[^}]+\}', content)
                 if match:
                     data = json.loads(match.group())
-                    log(f"OpenRouter [{model}]: {data}")
+                    log(f"OpenRouter [<{model}>]: {data}")
                     return data
+                else:
+                    log(f"OpenRouter sem JSON válido: {content[:100]}")
+                    
             elif response.status_code == 429:
-                #Quota exceeded, try next model
                 log(f"Quota exceeded para {model}, a tentar próximo...")
                 _current_model_index += 1
                 continue
             else:
-                log(f"ERRO OpenRouter [{model}]: {response.status_code}")
+                log(f"ERRO OpenRouter [{model}]: {response.status_code} - {response.text[:100]}")
                 
         except Exception as e:
             log(f"ERRO OpenRouter [{model}]: {e}")
