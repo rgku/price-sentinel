@@ -350,13 +350,22 @@ async def scrape_search(source: str, search_term: str) -> list:
     elif "all_channels" in source:
         # Search in ALL Telegram channels
         log(f"Pesquisar em TODOS os canais: {search_term}")
+        results = []
         for channel in TELEGRAM_ALL_CHANNELS:
             channel_source = f"canal:{channel}"
             log(f"A pesquisar em @{channel}...")
             channel_results = await fetch_telegram_channel_api(channel_source, search_term)
             if not channel_results:
-                channel_results = await fetch_telegram_channel_html(channel_source)
-            all_results.extend(channel_results)
+                # Try HTML fallback
+                try:
+                    url = f"https://t.me/s/{channel.replace('@', '')}"
+                    content = await scrape_website(url)
+                    if content:
+                        channel_results = [{"url": url, "content": content, "source": channel_source}]
+                except:
+                    pass
+            results.extend(channel_results)
+        return results
 
     elif "worten.pt" in source:
         encoded = translated.replace(' ', '-')
