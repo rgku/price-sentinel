@@ -196,7 +196,7 @@ def extract_prices_regex(text: str, query_name: str) -> list:
             except:
                 pass
     
-    return results[:3]  # Return top 3
+    return results[:5]  # Return top 5
 
 
 async def scrape_google_shopping(query: str, target_lang: str) -> list:
@@ -512,13 +512,12 @@ def send_telegram_alert(token: str, chat_id: str, alert: dict):
         message = f"""
 {emoji} Promocao Detetada!
 
-Query: {alert['query_name']}
-Produto: {alert['produto']}
+{alert['produto']}
 Preco: EUR {alert['preco']:.2f}
 Original: EUR {alert['preco_original']:.2f}
 Desconto: {discount:.0f}%
 
-Ver produto: {alert['url']}
+{alert['url']}
 """
         # Usar API direta em vez de biblioteca
         url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -578,46 +577,51 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
         # Fallback 2: regex if both AIs failed
         if not data or not data.get("preco"):
             log(f"Todas as AIs falharam, tentando regex fallback...")
-            regex_results = extract_prices_regex(content, query_name)
-            if regex_results:
-                data = regex_results[0]
-                log(f"Regex found: {data}")
+            all_prices = extract_prices_regex(content, query_name)
+            if all_prices:
+                log(f"Regex found {len(all_prices)} resultados")
+        else:
+            # Converter resultado único em lista
+            all_prices = [data]
 
-        if not data:
+        if not all_prices:
             continue
 
-        # Filtro por desconto mínimo
-        discount = data.get("desconto_percent") or 0
-        if discount < min_discount:
-            log(f"Descarto {query_name}: {discount}% < {min_discount}%")
-            continue
+        # Processar CADA resultado
+        for data in all_prices:
+            if not data or not data.get("preco"):
+                continue
 
-        # Filtro por preço máximo
-        price = data.get("preco") or 0
-        if max_price and price > max_price:
-            log(f"Descarto {query_name}: {price} > {max_price}")
-            continue
+            # Filtro por desconto mínimo
+            discount = data.get("desconto_percent") or 0
+            if discount < min_discount:
+                log(f"Descarto {query_name}: {discount}% < {min_discount}%")
+                continue
 
-        url = item.get("url", "")
-        last_discount = get_last_discount(url)
+            # Filtro por preço máximo
+            price = data.get("preco") or 0
+            if max_price and price > max_price:
+                log(f"Descarto {query_name}: {price} > {max_price}")
+                continue
 
-        if last_discount and discount <= last_discount:
-            log(f"Descarto {query_name}: sem melhoria (era {last_discount}%)")
-            continue
+            # Usar URL do produto (não da pesquisa geral)
+            produto_url = item.get("url", "")
 
-        save_price(url, query_name, data.get("preco") or 0, discount)
+            save_price(produto_url, query_name, price, discount)
 
-        alert = {
-            "query_name": query_name,
-            "produto": data.get("produto", ""),
-            "preco": data.get("preco", 0),
-            "preco_original": data.get("preco_original", 0),
-            "desconto_percent": discount,
-            "url": url,
-            "source": source,
-        }
+            alert = {
+                "query_name": query_name,
+                "produto": data.get("produto", ""),
+                "preco": price,
+                "preco_original": data.get("preco_original", 0),
+                "desconto_percent": discount,
+                "url": produto_url,
+                "source": source,
+            }
 
-        send_telegram_alert(telegram_token, chat_id, alert)
+            # ENVIAR alerta para CADA resultado
+            send_telegram_alert(telegram_token, chat_id, alert)
+            log(f"Alerta enviado: {data.get('produto')} - {discount}%")
 
 
 async def main():
