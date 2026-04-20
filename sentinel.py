@@ -622,6 +622,15 @@ def send_telegram_alert(token: str, chat_id: str, alert: dict):
         discount = alert.get("desconto_percent", 0)
         emoji = "🔥" if discount >= 50 else "📉" if discount >= 30 else "💰"
 
+        produto_link = alert.get("url", "")
+        telegram_link = alert.get("telegram_url", "")
+        
+        links_text = ""
+        if produto_link:
+            links_text += f"Comprar: {produto_link}\n"
+        if telegram_link:
+            links_text += f"Ver no canal: {telegram_link}"
+
         message = f"""
 {emoji} Promocao Detetada!
 
@@ -630,7 +639,7 @@ Preco: EUR {alert['preco']:.2f}
 Original: EUR {alert['preco_original']:.2f}
 Desconto: {discount:.0f}%
 
-{alert['url']}
+{links_text}
 """
         # Usar API direta em vez de biblioteca
         url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -714,11 +723,13 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
                 log(f"Descarto {query_name}: {price} > {max_price}")
                 continue
 
-            # Para canais Telegram, SEMPRE usar URL da mensagem Telegram (não a URL extraída pelo AI)
+            # Para canais Telegram, guardar AMBOS os URLs
             item_source = item.get("source", source)
             if "canal:" in item_source or "all_channels" in item_source:
-                produto_url = item.get("url", "")
+                telegram_url = item.get("url", "")
+                produto_url = data.get("url") or ""  # URL do produto (extraído pelo AI)
             else:
+                telegram_url = ""
                 produto_url = data.get("url") or item.get("url", "")
 
             save_price(produto_url, query_name, price, discount)
@@ -730,6 +741,7 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
                 "preco_original": data.get("preco_original", 0),
                 "desconto_percent": discount,
                 "url": produto_url,
+                "telegram_url": telegram_url,
                 "source": source,
             }
 
