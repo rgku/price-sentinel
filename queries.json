@@ -2,12 +2,21 @@
   "queries": [
     {
       "id": 1,
-      "name": "Fraldas Todos Canais",
+      "name": "Fraldas continente",
+      "type": "product", 
+      "source": "continente.pt",
+      "search_term": "T1 dodot fraldas",
+      "min_discount_percent": 0,
+      "max_price": 50
+    },
+    {
+      "id": 2,
+      "name": "Fraldas Telegram",
       "type": "product", 
       "source": "all_channels",
-      "search_term": "Fraldas",
+      "search_term": "T1 dodot",
       "min_discount_percent": 0,
-      "max_price": 30
+      "max_price": 100
     }
   ]
 }
