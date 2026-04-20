@@ -504,9 +504,8 @@ def send_telegram_alert(token: str, chat_id: str, alert: dict):
         return
 
     try:
-        from telegram import Bot
-        bot = Bot(token=token)
-        
+        import requests
+
         discount = alert.get("desconto_percent", 0)
         emoji = "🔥" if discount >= 50 else "📉" if discount >= 30 else "💰"
 
@@ -521,8 +520,17 @@ Desconto: {discount:.0f}%
 
 Ver produto: {alert['url']}
 """
-        bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
-        log(f"Alerta enviado: {alert['produto']} - {discount}% desconto")
+        # Usar API direta em vez de biblioteca
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        resp = requests.post(url, json={
+            "chat_id": chat_id,
+            "text": message,
+            "parse_mode": "Markdown"
+        })
+        if resp.ok:
+            log(f"Alerta enviado: {alert['produto']} - {discount}% desconto")
+        else:
+            log(f"ERRO Telegram: {resp.text}")
 
     except Exception as e:
         log(f"ERRO enviar alerta: {e}")
