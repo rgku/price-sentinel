@@ -714,8 +714,9 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
                 log(f"Descarto {query_name}: {price} > {max_price}")
                 continue
 
-            # Para canais Telegram, SEMPRE usar URL da mensagem Telegram (ignorar URL extraída pelo AI)
-            if "canal:" in source:
+            # Para canais Telegram, SEMPRE usar URL da mensagem Telegram (não a URL extraída pelo AI)
+            item_source = item.get("source", source)
+            if "canal:" in item_source or "all_channels" in item_source:
                 produto_url = item.get("url", "")
             else:
                 produto_url = data.get("url") or item.get("url", "")
