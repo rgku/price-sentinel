@@ -202,7 +202,7 @@ def extract_with_gemini(api_key: str, text: str, query_name: str) -> Optional[di
 
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash-lite")
 
         prompt = f"""
 Extrai o preco e desconto deste texto de promocao.
