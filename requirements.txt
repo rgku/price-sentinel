@@ -4,3 +4,5 @@ deep-translator>=1.10.0
 google-genai>=0.8.0
 telethon>=1.33.0
 feedparser>=6.0.0
+openrouter>=0.0.1
+requests>=2.31.0

@@ -386,6 +386,51 @@ async def fetch_telegram_channel_html(channel_username: str) -> list:
     return results
 
 
+def extract_with_openrouter(api_key: str, text: str, query_name: str) -> Optional[dict]:
+    """Fallback: usar OpenRouter API quando Gemini falha."""
+    import requests
+    
+    if not api_key:
+        return None
+    
+    try:
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "meta-llama/llama-3.2-11b-vision-instruct",
+                "messages": [{
+                    "role": "user",
+                    "content": f"""Extrai o preco e desconto deste texto de promocao.
+Responde APENAS em JSON: {{"produto": "nome", "preco": numero, "preco_original": numero, "desconto_percent": numero}}
+
+Texto: {text[:2000]}"""
+                }]
+            },
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+            
+            # Parse JSON response
+            import re
+            match = re.search(r'\{[^}]+\}', content)
+            if match:
+                data = json.loads(match.group())
+                log(f"OpenRouter retornou: {data}")
+                return data
+                
+    except Exception as e:
+        log(f"ERRO OpenRouter: {e}")
+    
+    return None
+
+
 def extract_with_gemini(api_key: str, text: str, query_name: str) -> Optional[dict]:
     if not api_key:
         log("ERRO: GEMINI_API_KEY nao definida")
@@ -485,9 +530,16 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
         
         data = extract_with_gemini(api_key, content, query_name)
 
-        # Fallback: use regex if Gemini failed
+        # Fallback 1: OpenRouter if Gemini failed
         if not data or not data.get("preco"):
-            log(f"Gemini failed, trying regex fallback...")
+            openrouter_key = os.getenv("OPENROUTER_API_KEY", "")
+            if openrouter_key:
+                log(f"Gemini failed, tentando OpenRouter...")
+                data = extract_with_openrouter(openrouter_key, content, query_name)
+
+        # Fallback 2: regex if both AIs failed
+        if not data or not data.get("preco"):
+            log(f"Todas as AIs falharam, tentando regex fallback...")
             regex_results = extract_prices_regex(content, query_name)
             if regex_results:
                 data = regex_results[0]
