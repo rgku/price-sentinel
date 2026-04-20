@@ -20,11 +20,25 @@ CONFIG_FILE = "queries.json"
 DB_FILE = "history.db"
 LOG_FILE = "sentinel.log"
 
+# All Telegram channels to search
+TELEGRAM_ALL_CHANNELS = [
+    "@wolf_ofertas",
+    "@portugalgeek",
+    "@linguica_das_promocoes",
+    "@economizzandodg",
+    "@chollos",
+    "@descuentos",
+    "@ganga24",
+    "@ofertacash",
+    "@viajerospiratas",
+    "@guidellowcost",
+]
+
 TELEGRAM_CHANNEL_LANG = {
     "amazon.es": "es",
     "continente.pt": "pt",
     "worten.pt": "pt",
-    "canal:@chollos": "es",
+    "all_channels": "pt",
     "canal:@descuentos": "es",
     "canal:@ganga24": "es",
     "canal:@ofertacash": "es",
@@ -332,6 +346,17 @@ async def scrape_search(source: str, search_term: str) -> list:
         content = await scrape_website(url)
         if content:
             results.append({"url": url, "content": content, "source": source})
+
+    elif "all_channels" in source:
+        # Search in ALL Telegram channels
+        log(f"Pesquisar em TODOS os canais: {search_term}")
+        for channel in TELEGRAM_ALL_CHANNELS:
+            channel_source = f"canal:{channel}"
+            log(f"A pesquisar em @{channel}...")
+            channel_results = await fetch_telegram_channel_api(channel_source, search_term)
+            if not channel_results:
+                channel_results = await fetch_telegram_channel_html(channel_source)
+            all_results.extend(channel_results)
 
     elif "worten.pt" in source:
         encoded = translated.replace(' ', '-')

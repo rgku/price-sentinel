@@ -2,12 +2,12 @@
   "queries": [
     {
       "id": 1,
-      "name": "Fraldas Worten",
+      "name": "Fraldas Todos Canais",
       "type": "product", 
-      "source": "worten.pt",
-      "search_term": "T1 dodot fraldas",
+      "source": "all_channels",
+      "search_term": "Fraldas",
       "min_discount_percent": 0,
-      "max_price": 50
+      "max_price": 30
     }
   ]
 }
