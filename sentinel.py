@@ -67,6 +67,8 @@ def load_env() -> dict:
         "GEMINI_API_KEY": os.getenv("GEMINI_API_KEY", ""),
         "TELEGRAM_TOKEN": os.getenv("TELEGRAM_TOKEN", ""),
         "CHAT_ID": os.getenv("CHAT_ID", ""),
+        "TELEGRAM_API_ID": os.getenv("TELEGRAM_API_ID", ""),
+        "TELEGRAM_API_HASH": os.getenv("TELEGRAM_API_HASH", ""),
     }
 
 
@@ -218,7 +220,58 @@ async def scrape_search(source: str, search_term: str) -> list:
     return results
 
 
+async def fetch_telegram_channel_api(channel_username: str, search_term: str) -> list:
+    """Ler mensagens de canal Telegram via API oficial (Telethon)."""
+    from telethon import TelegramClient
+    from telethon.errors import ApiIdInvalidError, UsernameNotOccupiedError
+    
+    results = []
+    channel = channel_username.replace("canal:", "")
+    
+    # Carregar credentials do Telegram
+    api_id = os.getenv("TELEGRAM_API_ID", "")
+    api_hash = os.getenv("TELEGRAM_API_HASH", "")
+    
+    if not api_id or not api_hash:
+        log("ERRO: TELEGRAM_API_ID ou TELEGRAM_API_HASH não definidos")
+        return results
+    
+    try:
+        client = TelegramClient('sentinel_session', int(api_id), api_hash)
+        
+        async with client:
+            # Obter mensagens do canal
+            try:
+                entity = await client.get_entity(channel)
+                messages = await client.get_messages(entity, limit=50)
+                
+                for msg in messages:
+                    if msg.text and search_term.lower() in msg.text.lower():
+                        # Tentar extrair preço do texto
+                        results.append({
+                            "url": f"https://t.me/{channel}/{msg.id}",
+                            "content": msg.text,
+                            "source": channel_username,
+                            "message": msg.text
+                        })
+                        
+            except UsernameNotOccupiedError:
+                log(f"Canal não encontrado: {channel}")
+            except Exception as e:
+                log(f"ERRO a ler canal {channel}: {e}")
+        
+        log(f"Telegram API: {len(results)} mensagens encontradas em @{channel}")
+        
+    except ApiIdInvalidError:
+        log("ERRO: API_ID ou API_HASH inválidos")
+    except Exception as e:
+        log(f"ERRO Telegram API: {e}")
+    
+    return results
+
+
 async def fetch_telegram_channel_html(channel_username: str) -> list:
+    """Fallback: usar HTML público (menos fiável)."""
     results = []
     channel = channel_username.replace("canal:", "")
     url = f"https://t.me/s/{channel}"
@@ -316,7 +369,11 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
     all_results = []
 
     if "canal:" in source:
-        results = await fetch_telegram_channel_html(source)
+        # Try Telegram API first, fallback to HTML
+        results = await fetch_telegram_channel_api(source, search_term)
+        if not results:
+            log(f"Telegram API falhou, a tentar HTML...")
+            results = await fetch_telegram_channel_html(source)
         all_results.extend(results)
     else:
         results = await scrape_search(source, search_term)
