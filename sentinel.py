@@ -236,18 +236,23 @@ def extract_prices_regex(text: str, query_name: str) -> list:
                     "url": url
                 })
     
-    # Method 3: If still nothing, look for any prices
+    # Method 3: If still nothing, look for ANY prices in page (fallback)
     if not results:
+        print("[DEBUG] Trying Method 3 - any prices in HTML")
         all_prices = re.findall(r'(\d+[.,]\d{2})€', text)
+        print(f"[DEBUG] Found raw prices: {all_prices[:10]}")
+        
         valid_prices = []
         for p in all_prices:
             try:
                 price = float(p.replace(',', '.'))
-                if 1 < price < 100:
+                if 1 < price < 100:  # Look for real product prices
                     valid_prices.append(price)
             except:
                 pass
+        
         valid = sorted(set(valid_prices))[:5]
+        print(f"[DEBUG] Method 3 valid prices: {valid}")
         
         for i, price in enumerate(valid):
             original = price * 1.3
@@ -657,9 +662,8 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
             if not data or not data.get("preco"):
                 continue
 
-            # Filtro por desconto mínimo
+            # Filtro por desconto mínimo - ACEITAR TODOS (0%)
             discount = data.get("desconto_percent") or 0
-            if discount < min_discount:
                 log(f"Descarto {query_name}: {discount}% < {min_discount}%")
                 continue
 
