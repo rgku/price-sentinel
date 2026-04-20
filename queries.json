@@ -2,25 +2,7 @@
   "queries": [
     {
       "id": 1,
-      "name": "TVs 4K Amazon ES",
-      "type": "category",
-      "source": "amazon.es",
-      "search_term": "televisor 4k",
-      "min_discount_percent": 25,
-      "max_price": 400
-    },
-    {
-      "id": 2,
-      "name": "Fraldas Dodot Continente",
-      "type": "product",
-      "source": "continente.pt",
-      "search_term": "Fraldas Dodot",
-      "min_discount_percent": 20,
-      "max_price": 15
-    },
-    {
-      "id": 3,
-      "name": "Nutella Chollos (Telegram API)",
+      "name": "Nutella Telegram",
       "type": "product",
       "source": "canal:@chollos",
       "search_term": "Nutella",
@@ -28,16 +10,43 @@
       "max_price": 5
     },
     {
-      "id": 4,
-      "name": "Nike Air Max Google Shopping",
+      "id": 2,
+      "name": "Nike Air Max Telegram",
       "type": "brand",
-      "source": "google",
+      "source": "canal:@descuentos",
       "search_term": "Nike Air Max",
       "min_discount_percent": 30,
       "max_price": 120
     },
     {
+      "id": 3,
+      "name": "Fraldas Telegram",
+      "type": "product",
+      "source": "canal:@wolf_ofertas",
+      "search_term": "Fraldas",
+      "min_discount_percent": 20,
+      "max_price": 15
+    },
+    {
+      "id": 4,
+      "name": "Tech Ganga24",
+      "type": "category",
+      "source": "canal:@ganga24",
+      "search_term": "tecnologia",
+      "min_discount_percent": 30,
+      "max_price": 50
+    },
+    {
       "id": 5,
+      "name": "Televisores Google",
+      "type": "category",
+      "source": "google",
+      "search_term": "televisor 4k",
+      "min_discount_percent": 25,
+      "max_price": 400
+    },
+    {
+      "id": 6,
       "name": "Smartphones Google",
       "type": "category",
       "source": "google",
@@ -46,58 +55,22 @@
       "max_price": 500
     },
     {
-      "id": 6,
-      "name": "Pilhas Amazon ES",
-      "type": "category",
-      "source": "amazon.es",
-      "search_term": "pilhas",
-      "min_discount_percent": 20,
-      "max_price": 15
-    },
-    {
       "id": 7,
-      "name": "Fraldas Wolf Ofertas PT",
-      "type": "product",
-      "source": "canal:@wolf_ofertas",
-      "search_term": "Fraldas",
-      "min_discount_percent": 20,
-      "max_price": 15
+      "name": "Portugese Wolf Ofertas",
+      "type": "category",
+      "source": "canal:@portugalgeek",
+      "search_term": "tecnologia",
+      "min_discount_percent": 25,
+      "max_price": 100
     },
     {
       "id": 8,
-      "name": "Ganga24 Tech ES",
+      "name": "Viajens Viajeros",
       "type": "category",
-      "source": "canal:@ganga24",
-      "search_term": "tecnologia",
-      "min_discount_percent": 30,
-      "max_price": 50
-    },
-    {
-      "id": 9,
-      "name": "Tech Deals RSS",
-      "type": "category",
-      "source": "rss:https://dealdump.com/rss.php?cat=computers-and-accessories",
-      "search_term": "laptop",
-      "min_discount_percent": 20,
-      "max_price": 500
-    },
-    {
-      "id": 10,
-      "name": "Amazon Tech Deals RSS",
-      "type": "category",
-      "source": "rss:https://dealdump.com/rss.php?cat=Laptops",
-      "search_term": "computer",
-      "min_discount_percent": 25,
-      "max_price": 600
-    },
-    {
-      "id": 11,
-      "name": "Deals News RSS",
-      "type": "category",
-      "source": "rss:https://www.dealdump.com/rss.php?cat=deals-under-25",
-      "search_term": "tech",
-      "min_discount_percent": 30,
-      "max_price": 25
+      "source": "canal:@viajerospiratas",
+      "search_term": "vuelo",
+      "min_discount_percent": 40,
+      "max_price": 100
     }
   ]
 }
