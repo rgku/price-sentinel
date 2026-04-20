@@ -177,12 +177,35 @@ def extract_prices_regex(text: str, query_name: str) -> list:
     text_lower = text.lower()
     
     # Find all product links - Continente has /produto/ in URLs
-    product_urls = re.findall(r'href="(https?://[^"]*produto[^"]*)"', text)
+    # Try multiple patterns
+    patterns = [
+        r'href="(https?://[^"]*produto[^"]*)"',
+        r'href="(/produto/[^"]*)"',
+        r'data-product-url="([^"]*)"',
+    ]
+    
+    product_urls = []
+    for pattern in patterns:
+        matches = re.findall(pattern, text)
+        product_urls.extend(matches)
+    
+    # Make absolute URLs if relative
+    product_urls = [url if url.startswith('http') else f'https://www.continente.pt{url}' for url in product_urls]
     product_urls = list(set(product_urls))[:5]  # Unique, max 5
     
-    # Find prices near product context - look for € amounts in product cards
-    # Pattern: look for prices in format €XX.XX or XX,XX€
-    all_prices = re.findall(r'[€$]?\s*(\d+[.,]\d{2})\s*€?', text)
+    print(f"[DEBUG] Found {len(product_urls)} product URLs")
+    
+    # Find prices - look for various patterns
+    price_patterns = [
+        r'[\€\$]?\s*(\d+[.,]\d{2})\s*[\€\$]?',  # €19.99 or 19,99€
+        r'price["\s:]+["\s]*(\d+[.,]\d{2})',  # price":"19.99
+        r'(\d+[.,]\d{2})€',  # 19.99€
+    ]
+    
+    all_prices = []
+    for pattern in price_patterns:
+        matches = re.findall(pattern, text)
+        all_prices.extend(matches)
     
     # Filter reasonable prices (between 1€ and 200€)
     valid_prices = []
@@ -197,29 +220,20 @@ def extract_prices_regex(text: str, query_name: str) -> list:
     # Get unique prices sorted
     unique_prices = sorted(set(valid_prices))[:5]
     
-    # If we have product URLs but no clear prices, estimate
+    print(f"[DEBUG] Found {len(unique_prices)} valid prices: {unique_prices}")
+    
+    # If we have product URLs but no clear prices, try to estimate
     for i, url in enumerate(product_urls):
         if i < len(unique_prices):
             price = unique_prices[i]
-            # Estimate original price (30% higher)
             original = price * 1.3
             discount = ((original - price) / original) * 100 if original > 0 else 0
             
             results.append({
                 "produto": f"Produto {i+1}",
                 "preco": price,
-                "preco_original": original,
+                "preco_original": round(original, 2),
                 "desconto_percent": round(discount),
-                "source": "regex",
-                "url": url
-            })
-        else:
-            # Just product URL, no price found
-            results.append({
-                "produto": f"Produto {i+1}",
-                "preco": 0,
-                "preco_original": 0,
-                "desconto_percent": 0,
                 "source": "regex",
                 "url": url
             })
