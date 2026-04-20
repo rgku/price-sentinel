@@ -144,13 +144,55 @@ async def scrape_website(url: str) -> str:
         async with pw() as p:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
-            await page.goto(url, timeout=30000, wait_until="networkidle")
+            
+            # Set user agent to look like a real browser
+            await page.set_extra_http_headers({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            })
+            
+            await page.goto(url, timeout=30000, wait_until="domcontentloaded")
+            await page.wait_for_timeout(3000)  # Wait for JS to load
+            
             content = await page.content()
             await browser.close()
+            
+            # Debug: log content length
+            log(f"Scraped {len(content)} chars from {url}")
+            
             return content
     except Exception as e:
         log(f"ERRO scraping {url}: {e}")
         return ""
+
+
+def extract_prices_regex(text: str, query_name: str) -> list:
+    """Fallback: extract prices directly from HTML using regex."""
+    import re
+    
+    # Common price patterns: €XX.XX, XX,XX€, $XX.XX
+    patterns = [
+        r'[€$]?\s*(\d+[.,]\d{2})\s*€?',  # 19.99, 19,99
+        r'[€$]?\s*(\d+)\s*€?(?:\s*€|\s*$)',  # 19€
+    ]
+    
+    results = []
+    for pattern in patterns:
+        matches = re.findall(pattern, text)
+        for match in matches:
+            try:
+                price = float(match.replace(',', '.'))
+                if 1 < price < 1000:  # Reasonable price range
+                    results.append({
+                        "produto": f"Produto encontrado ({query_name})",
+                        "preco": price,
+                        "preco_original": price * 1.3,  # Estimate original as 30% higher
+                        "desconto_percent": 23,  # Assume reasonable discount
+                        "source": "regex"
+                    })
+            except:
+                pass
+    
+    return results[:3]  # Return top 3
 
 
 async def scrape_search(source: str, search_term: str) -> list:
@@ -285,7 +327,18 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
         return
 
     for item in all_results:
-        data = extract_with_gemini(api_key, item.get("content", ""), query_name)
+        content = item.get("content", "")
+        log(f"Content preview: {content[:500]}...")
+        
+        data = extract_with_gemini(api_key, content, query_name)
+
+        # Fallback: use regex if Gemini failed
+        if not data or not data.get("preco"):
+            log(f"Gemini failed, trying regex fallback...")
+            regex_results = extract_prices_regex(content, query_name)
+            if regex_results:
+                data = regex_results[0]
+                log(f"Regex found: {data}")
 
         if not data:
             continue

@@ -1,318 +1,273 @@
-# Manual do Price Sentinel 🔍
+# 📖 Price Sentinel - Manual Completo
 
-Guia completo para configurares e usares o teu monitor de promoções automático.
-
----
-
-## Índice
-
-1. [Configuração Inicial](#1-configuração-inicial)
-2. [Como Criar Pesquisas](#2-como-criar-pesquisas)
-3. [Estrutura do queries.json](#3-estrutura-do-queriesjson)
-4. [Fuentes Suportadas](#4-fontes-suportadas)
-5. [Exemplos Práticos](#5-exemplos-práticos)
-6. [Executar Localmente](#6-executar-localmente)
-7. [Perguntas Frequentes](#7-perguntas-frequentes)
+Guia completo para configurar e usar o seu monitor de promoções automático.
 
 ---
 
-## 1. Configuração Inicial
+## 1. O que é o Price Sentinel?
 
-### 1.1 Criar Bot Telegram
-
-1. Abre o Telegram
-2. Procura por **@BotFather**
-3. Envia `/newbot`
-4. Segue as instruções:
-   - Nome: `Price Sentinel` (ou outro)
-   - Username: `PriceSentinelBot` (tem de acabar em `Bot`)
-5. **Guarda o Token** que o BotFather dá (algo como `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`)
-
-### 1.2 Obter Chat ID
-
-1. Procura por **@userinfobot** no Telegram
-2. Envia `/start`
-3. O bot responde com o teu **ID** (número grande, ex: `123456789`)
-
-### 1.3 Obter API Key Gemini
-
-1. Vai a https://aistudio.google.com/app/apikey
-2. Clica em **"Create API Key"**
-3. Copia a key (começa por `AIza...`)
-
-### 1.4 Configurar GitHub Secrets
-
-1. Vai ao teu repositório no GitHub
-2. Clica em **Settings** → **Secrets and variables** → **Actions**
-3. Clica em **New repository secret**
-4. Adiciona estes 3 secrets:
-
-| Secret | Valor |
-|--------|-------|
-| `GEMINI_API_KEY` | A key do Gemini |
-| `TELEGRAM_TOKEN` | O token do bot |
-| `CHAT_ID` | O teu ID |
+O Price Sentinel é uma aplicação **Zero Budget** que:
+- ✅ Monitoriza sites e canais Telegram automaticamente
+- ✅ Usa IA (Gemini) para extrair preços e descontos
+- ✅ Envia alertas quando encontra boas promoções
+- ✅ Corre no GitHub Actions (grátis!)
 
 ---
 
-## 2. Como Criar Pesquisas
+## 2. Configuração Inicial
 
-### O принципо
+### 2.1 Criar Bot Telegram
 
-Tu defines **o que queres pesquisar** + **de onde** + **desconto mínimo**.
+1. Abra o **Telegram**
+2. Procure por **@BotFather**
+3. Envie `/newbot`
+4. Siga as instruções:
+   - Nome: `PriceSentinel` (ou outro)
+   - Username: `PriceSentinelBot` (tem de acabar em Bot)
+5. **Guarde o Token** fornecido (ex: `123456:ABC-DEF...`)
 
-O sistema:
-1. Traduz automaticamente o termo para a língua correta
-2. Pesquisa no site/canal
-3. Pede ao Gemini para extrair preços
-4. Envia alerta se desconto >= mínimo
+### 2.2 Obter Chat ID
 
-### Параметры
+1. Procure por **@userinfobot** no Telegram
+2. Envie `/start`
+3. Guarde o **ID** (número)
 
-| Parâmetro | Obrigatório | Descrição |
-|----------|------------|-----------|
-| `name` | ✅ | Nome identificador (tu decides) |
-| `type` | ✅ | `category`, `product` ou `brand` |
-| `source` | ✅ | Onde pesquisar |
-| `search_term` | ✅ | O que pesquisar (em português!) |
-| `min_discount_percent` | ✅ | Desconto mínimo para alertar |
+### 2.3 Obter API Key Gemini
 
-### Tipos de Pesquisa
+1. Vá a https://aistudio.google.com/app/apikey
+2. Clique em **"Create API Key"**
+3. Guarde a key
 
-| Tipo | Quando usar | Exemplo |
-|------|------------|---------|
-| `category` | Categoria genérica | "televisores", "telemóveis", "computadores", "pilhas" |
-| `product` | Produto específico (marca + tipo) | "Fraldas Dodot", "Nutella 500g", "iPhone 15" |
-| `brand` | Marca específicos | "Nike Air Max", "Samsung Galaxy", "Apple" |
+### 2.4 Configurar no GitHub
 
-### Exemplos
-
-```json
-// Categoria: Televisores 4K na Amazon ES
-{"name": "TVs 4K", "type": "category", "source": "amazon.es", "search_term": "televisor 4k", "min_discount_percent": 25}
-
-// Produto específico: Fraldas Dodot no Continente
-{"name": "Fraldas", "type": "product", "source": "continente.pt", "search_term": "Fraldas Dodot", "min_discount_percent": 20}
-
-// Marca: Nike Air Max nos canais espanhóis
-{"name": "Nike", "type": "brand", "source": "canal:@descuentos", "search_term": "Nike Air Max", "min_discount_percent": 30}
-```
+1. Vá ao repositório: https://github.com/rgku/price-sentinel/settings/secrets/actions
+2. Adicione:
+   - `GEMINI_API_KEY`: sua key
+   - `TELEGRAM_TOKEN`: token do bot
+   - `CHAT_ID`: seu ID
 
 ---
 
-## 3. Estrutura do queries.json
+## 3. Como Criar Pesquisas
 
-O ficheiro `queries.json` contém uma lista de queries:
+### 3.1 Estrutura das Queries
+
+Edite o ficheiro `queries.json`:
 
 ```json
 {
-  "queries": [
-    {/* query 1 */},
-    {/* query 2 */},
-    {/* query 3 */}
-  ]
+  "name": "Nome da Pesquisa",
+  "type": "category|product|brand",
+  "source": "fonte",
+  "search_term": "termo",
+  "min_discount_percent": 20,
+  "max_price": 50
 }
 ```
 
-### Como Adicionar/Editar
+### 3.2 Parâmetros Disponíveis
 
-1. Abre `queries.json`
-2. Adiciona/modifica objekos na lista `queries`
-3. Guarda o ficheiro
-4. Faz commit (as alterações são aplicadas automaticamente)
+| Parâmetro | Obrigatório | Descrição | Exemplo |
+|----------|------------|----------|---------|
+| `name` | ✅ | Nome identificador | "TVs 4K" |
+| `type` | ✅ | Tipo de pesquisa | `category`, `product`, `brand` |
+| `source` | ✅ | Onde pesquisar | `amazon.es`, `canal:@chollos` |
+| `search_term` | ✅ | Termo a pesquisar (PT) | "televisor 4k" |
+| `min_discount_percent` | ❌ | Desconto mínimo (%) | 25 |
+| `max_price` | ❌ | Preço máximo (€) | 100 |
 
----
+### 3.3 Tipos de Pesquisa
 
-## 4. Fuentes Suportadas
+| Tipo | Quando usar | Exemplo |
+|------|------------|---------|
+| `category` | Categoria genérica | "televisores", "pilhas", "computadores" |
+| `product` | Produto específico | "Fraldas Dodot", "Nutella 500g" |
+| `brand` | Marca específica | "Nike Air Max", "Samsung Galaxy" |
 
-### 4.1 Websites
+### 3.4 Fontes Suportadas
 
-| Source | País | Lingua | Exemplo |
-|--------|-----|--------|--------|
-| `amazon.es` | 🇪🇸 | ES | Amazon Spain |
-| `continente.pt` | 🇵🇹 | PT | Continente Portugal |
+**Websites:**
+| Source | País | Língua |
+|--------|------|--------|
+| `amazon.es` | 🇪🇸 | ES |
+| `continente.pt` | 🇵🇹 | PT |
 
-### 4.2 Canais Telegram
+**Canais Telegram:**
 
-**Portugal:**
-| Canal | Membros | Tipo |
-|-------|--------|------|
-| @wolf_ofertas | 62K | Geral |
-| @portugalgeek | 27K | Geral |
-| @linguica_das_promocoes | 10K | Geral |
-| @economizzandodg | 7K | Cupons |
-
-**Espanha:**
-| Canal | Membros | Tipo |
-|-------|--------|------|
-| @chollos | 232K | **Maior!** |
-| @descuentos | 115K | Geral |
-| @ganga24 | Ativo | IA filtra |
-| @ofertacash | 8K | Amazon, AliExpress |
-| @blogdeofertas | 532 | Blog |
-
-**Viagens:**
-| Canal | Membros | Tipo |
-|-------|--------|------|
-| @viajerospiratas | 67K | Voos, hotéis |
-| @guidellowcost | 40K | Voos low cost |
+| Canal | Membros | País |
+|-------|---------|------|
+| @chollos | 232K | 🇪🇸 |
+| @descuentos | 115K | 🇪🇸 |
+| @ganga24 | Ativo | 🇪🇸 |
+| @wolf_ofertas | 62K | 🇵🇹 |
+| @portugalgeek | 27K | 🇵🇹 |
+| @viajerospiratas | 67K | ✈️ |
 
 ---
 
-## 5. Exemplos Práticos
+## 4. Exemplos de Pesquisas
 
-### 5.1 Pesquisas Recomendadas para Iniciar
+### 4.1 Exemplos Recomendados
 
 ```json
 {
   "queries": [
     {
-      "name": "TVs 4K Amazon ES",
+      "name": "TVs 4K Amazon",
       "type": "category",
       "source": "amazon.es",
       "search_term": "televisor 4k",
-      "min_discount_percent": 25
+      "min_discount_percent": 25,
+      "max_price": 400
     },
     {
       "name": "Fraldas Dodot",
       "type": "product",
       "source": "continente.pt",
       "search_term": "Fraldas Dodot",
-      "min_discount_percent": 20
+      "min_discount_percent": 20,
+      "max_price": 15
     },
     {
-      "name": "Nutella Telegram",
+      "name": "Nutella",
       "type": "product",
       "source": "canal:@chollos",
       "search_term": "Nutella",
-      "min_discount_percent": 25
+      "min_discount_percent": 25,
+      "max_price": 5
     },
     {
       "name": "Nike Air Max",
       "type": "brand",
       "source": "canal:@descuentos",
       "search_term": "Nike Air Max",
-      "min_discount_percent": 30
-    },
-    {
-      "name": "Voos Baratos",
-      "type": "category",
-      "source": "canal:@viajerospiratas",
-      "search_term": "vuelo",
-      "min_discount_percent": 40
-    },
-    {
-      "name": "Pilhas",
-      "type": "category",
-      "source": "amazon.es",
-      "search_term": "pilhas",
-      "min_discount_percent": 20
+      "min_discount_percent": 30,
+      "max_price": 120
     }
   ]
 }
 ```
 
-### 5.2 Como Criar Novas Pesquisas
+### 4.2 Filtros Disponíveis
 
-**Para adicionares uma nova pesquisa:**
+**Desconto Mínimo:**
+```json
+"min_discount_percent": 20  // Só alerta se desconto >= 20%
+```
 
-1. Decide o que queres monitorizar
-2. Escolhe o tipo (`category`, `product`, `brand`)
-3. Escolhe a fonte (site ou canal)
-4. Define o desconto mínimo
+**Preço Máximo:**
+```json
+"max_price": 50  // Só alerta se preço <= 50€
+```
 
-Exemplo - Quero monitorizar "iPhone 16" nos canais espanhóis:
+**Ambos:**
+```json
+"min_discount_percent": 30,
+"max_price": 100
+```
+
+---
+
+## 5. Como Editar as Pesquisas
+
+### 5.1 Adicionar Nova Pesquisa
+
+1. Edite `queries.json`
+2. Adicione um novo objeto:
+```json
+{
+  "name": "Nome",
+  "type": "category",
+  "source": "amazon.es",
+  "search_term": "termo",
+  "min_discount_percent": 20
+}
+```
+3. Faça commit das alterações
+
+### 5.2 Remover Pesquisa
+
+Basta apagar o objeto correspondente do `queries.json`.
+
+---
+
+## 6. Frequência de Execução
+
+O sistema corre automaticamente:
+- **A cada 8 horas** (3x/dia)
+- Pode executar manualmente no GitHub Actions
+
+---
+
+## 7. Onde Receber Alertas
+
+Quando o sistema encontrar uma promoção que cumpra os filtros, recebe uma mensagem no Telegram como:
+
+```
+📉 Promoção Detetada!
+
+Query: TVs 4K Amazon
+Produto: Televisor Samsung 55" 4K
+Preço: €399.99
+Original: €599.99
+Desconto: 33%
+
+Ver produto: [link]
+```
+
+---
+
+## 8. Custo
+
+| Serviço | Custo |
+|---------|-------|
+| GitHub Actions | Grátis (2000 min/mês) |
+| Gemini API | Grátis (1000 req/dia) |
+| deep-translator | Grátis |
+| Telegram | Grátis |
+| **Total** | **Zero Budget!** |
+
+---
+
+## 9. Perguntas Frequentes
+
+**P: Por que não recebo alertas?**
+R: Verifique se o termo existe nas fontes e se o desconto cumpre os filtros.
+
+**P: Posso adicionar mais pesquisas?**
+R: Sim, mas mais queries = mais tempo e custo (ainda assim baixo).
+
+**P: Como parar?**
+R: Edite o workflow para remover ou delete o repositório.
+
+---
+
+## 10. Formato JSON Completo
+
+Exemplo com todos os campos:
 
 ```json
 {
-  "name": "iPhone 16 Chollos",
-  "type": "product",
-  "source": "canal:@chollos",
-  "search_term": "iPhone 16",
-  "min_discount_percent": 25
+  "queries": [
+    {
+      "id": 1,
+      "name": "Exemplo",
+      "type": "category",
+      "source": "amazon.es",
+      "search_term": "exemplo",
+      "min_discount_percent": 20,
+      "max_price": 100
+    }
+  ]
 }
 ```
 
 ---
 
-## 6. Executar Localmente
+## 11. Suporte
 
-### 6.1 Instalação
-
-```bash
-# Clonar o repositório
-git clone https://github.com/teu-user/price-sentinel.git
-cd price-sentinel
-
-# Criar ambiente virtual (opcional)
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# ou
-venv\Scripts\activate  # Windows
-
-# Instalar dependências
-pip install -r requirements.txt
-playwright install chromium
-```
-
-### 6.2 Configurar
-
-```bash
-# Criar ficheiro .env
-cp .env.example .env
-
-# Editar .env com as tuas keys
-# GEMINI_API_KEY=...
-# TELEGRAM_TOKEN=...
-# CHAT_ID=...
-```
-
-### 6.3 Executar
-
-```bash
-python sentinel.py
-```
+Para dúvidas, abra um issue no GitHub.
 
 ---
 
-## 7. Perguntas Frequentes
-
-### Quanto custa?
-
-| Serviço | Custo |
-|---------|-------|
-| GitHub Actions | Grátis (2000 min/mês) |
-| Gemini API | ~$0.001/execução |
-| Deep-translator | Grátis |
-| Telegram | Gr��tis |
-| **Total** | **Zero Budget!** |
-
-### Com que frequência corre?
-
-- A cada 60 minutos automaticamente
-- Podes executar manualmente no GitHub (Actions → Run workflow)
-
-### Por que não recebo alertas?
-
-Verifica:
-1. ✅ Secrets estão configuradas no GitHub?
-2. ✅ O termo de pesquisa existe nos canais/sites?
-3. ✅ O desconto é maior que `min_discount_percent`?
-
-### Posso adicionar mais pesquisas?
-
-Sim! Edita `queries.json` e adiciona queries. Mas cuidado - mais queries = mais execuções = mais custo Gemini.
-
-### Como parar?
-
-Remove o repositório ou desativa o workflow em GitHub Actions Settings.
-
----
-
-## Suporte
-
-Se tiveres dúvidas, abre um issue no GitHub ou consulta este manual.
-
----
-
-**Price Sentinel** - Poupa dinheiro sem pensar!
+**Price Sentinel** - Poupe dinheiro sem pensar! 💰
