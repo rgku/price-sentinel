@@ -478,15 +478,10 @@ async def fetch_telegram_channel_api(channel_username: str, search_term: str) ->
         client = TelegramClient(session=None, api_id=api_id, api_hash=api_hash)
         
         await client.connect()
-        log("DEBUG: Client connected, checking authorization...")
+        log("DEBUG: Client connected, trying to access channel...")
         
-        # Verificar se está conectado
-        if not await client.is_user_authorized():
-            log("ERRO: Telegram não autorizado. Bot token ou API credentials inválidas.")
-            await client.disconnect()
-            return results
-        
-        log("DEBUG: Client authorized successfully!")
+        # Não verificar is_user_authorized - tentar diretamente aceder ao canal
+        # para canais públicos não precisa de user autenticado
         
         # Obter mensagens do canal
         try:
