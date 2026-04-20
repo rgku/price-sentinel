@@ -444,41 +444,57 @@ async def fetch_telegram_channel_api(channel_username: str, search_term: str) ->
     channel = channel_username.replace("canal:", "")
     
     # Carregar credentials do Telegram
-    api_id = os.getenv("TELEGRAM_API_ID", "")
+    api_id_str = os.getenv("TELEGRAM_API_ID", "")
     api_hash = os.getenv("TELEGRAM_API_HASH", "")
     
-    if not api_id or not api_hash:
+    if not api_id_str or not api_hash:
         log("ERRO: TELEGRAM_API_ID ou TELEGRAM_API_HASH não definidos")
         return results
     
     try:
-        client = TelegramClient('sentinel_session', int(api_id), api_hash)
+        api_id = int(api_id_str)
+    except ValueError:
+        log("ERRO: TELEGRAM_API_ID deve ser um número inteiro")
+        return results
+    
+    try:
+        # Usar sessão em memória (não guarda ficheiro)
+        client = TelegramClient(session=None, api_id=api_id, api_hash=api_hash)
         
-        async with client:
-            # Obter mensagens do canal
-            try:
-                entity = await client.get_entity(channel)
-                messages = await client.get_messages(entity, limit=50)
-                
-                for msg in messages:
-                    if msg.text and search_term.lower() in msg.text.lower():
-                        # Tentar extrair preço do texto
-                        results.append({
-                            "url": f"https://t.me/{channel}/{msg.id}",
-                            "content": msg.text,
-                            "source": channel_username,
-                            "message": msg.text
-                        })
-                        
-            except UsernameNotOccupiedError:
-                log(f"Canal não encontrado: {channel}")
-            except Exception as e:
-                log(f"ERRO a ler canal {channel}: {e}")
+        await client.connect()
         
+        # Verificar se está conectado
+        if not await client.is_user_authorized():
+            log("ERRO: Telegram não autorizado. Bot token ou API credentials inválidas.")
+            await client.disconnect()
+            return results
+        
+        # Obter mensagens do canal
+        try:
+            entity = await client.get_input_entity(channel)
+            messages = await client.get_messages(entity, limit=50)
+            
+            for msg in messages:
+                if msg.text and search_term.lower() in msg.text.lower():
+                    results.append({
+                        "url": f"https://t.me/{channel}/{msg.id}",
+                        "content": msg.text,
+                        "source": channel_username,
+                        "message": msg.text
+                    })
+                    
+        except UsernameNotOccupiedError:
+            log(f"Canal não encontrado: {channel}")
+        except Exception as e:
+            log(f"ERRO a ler canal {channel}: {e}")
+        
+        await client.disconnect()
         log(f"Telegram API: {len(results)} mensagens encontradas em @{channel}")
         
     except ApiIdInvalidError:
         log("ERRO: API_ID ou API_HASH inválidos")
+    except Exception as e:
+        log(f"ERRO Telegram API: {e}")
     except Exception as e:
         log(f"ERRO Telegram API: {e}")
     
