@@ -170,33 +170,61 @@ async def scrape_website(url: str) -> str:
 
 
 def extract_prices_regex(text: str, query_name: str) -> list:
-    """Fallback: extract prices directly from HTML using regex."""
+    """Extract REAL prices and product URLs from HTML."""
     import re
     
-    # Common price patterns: €XX.XX, XX,XX€, $XX.XX
-    patterns = [
-        r'[€$]?\s*(\d+[.,]\d{2})\s*€?',  # 19.99, 19,99
-        r'[€$]?\s*(\d+)\s*€?(?:\s*€|\s*$)',  # 19€
-    ]
-    
     results = []
-    for pattern in patterns:
-        matches = re.findall(pattern, text)
-        for match in matches:
-            try:
-                price = float(match.replace(',', '.'))
-                if 1 < price < 1000:  # Reasonable price range
-                    results.append({
-                        "produto": f"Produto encontrado ({query_name})",
-                        "preco": price,
-                        "preco_original": price * 1.3,  # Estimate original as 30% higher
-                        "desconto_percent": 23,  # Assume reasonable discount
-                        "source": "regex"
-                    })
-            except:
-                pass
+    text_lower = text.lower()
     
-    return results[:5]  # Return top 5
+    # Find all product links - Continente has /produto/ in URLs
+    product_urls = re.findall(r'href="(https?://[^"]*produto[^"]*)"', text)
+    product_urls = list(set(product_urls))[:5]  # Unique, max 5
+    
+    # Find prices near product context - look for € amounts in product cards
+    # Pattern: look for prices in format €XX.XX or XX,XX€
+    all_prices = re.findall(r'[€$]?\s*(\d+[.,]\d{2})\s*€?', text)
+    
+    # Filter reasonable prices (between 1€ and 200€)
+    valid_prices = []
+    for p in all_prices:
+        try:
+            price = float(p.replace(',', '.'))
+            if 1 < price < 200:
+                valid_prices.append(price)
+        except:
+            pass
+    
+    # Get unique prices sorted
+    unique_prices = sorted(set(valid_prices))[:5]
+    
+    # If we have product URLs but no clear prices, estimate
+    for i, url in enumerate(product_urls):
+        if i < len(unique_prices):
+            price = unique_prices[i]
+            # Estimate original price (30% higher)
+            original = price * 1.3
+            discount = ((original - price) / original) * 100 if original > 0 else 0
+            
+            results.append({
+                "produto": f"Produto {i+1}",
+                "preco": price,
+                "preco_original": original,
+                "desconto_percent": round(discount),
+                "source": "regex",
+                "url": url
+            })
+        else:
+            # Just product URL, no price found
+            results.append({
+                "produto": f"Produto {i+1}",
+                "preco": 0,
+                "preco_original": 0,
+                "desconto_percent": 0,
+                "source": "regex",
+                "url": url
+            })
+    
+    return results[:5]
 
 
 async def scrape_google_shopping(query: str, target_lang: str) -> list:
@@ -604,8 +632,8 @@ async def process_query(api_key: str, telegram_token: str, chat_id: str, query: 
                 log(f"Descarto {query_name}: {price} > {max_price}")
                 continue
 
-            # Usar URL do produto (não da pesquisa geral)
-            produto_url = item.get("url", "")
+            # Usar URL do PRODUTO encontrado (não da pesquisa geral)
+            produto_url = data.get("url") or item.get("url", "")
 
             save_price(produto_url, query_name, price, discount)
 
